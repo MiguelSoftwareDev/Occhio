@@ -11,7 +11,7 @@ from backend.infrastructure import messaging
 from backend.services import analysis_server, consumer
 
 
-# Exercita transporte gRPC real com integrações isoladas || Exercise real gRPC with isolated adapters
+# Exercita transporte gRPC real com integrações isoladas
 @pytest.mark.asyncio
 async def test_unary_stream_and_zero_values(snapshot, monkeypatch):
     published = []
@@ -29,7 +29,7 @@ async def test_unary_stream_and_zero_values(snapshot, monkeypatch):
             result = await stub.AnalyzeSnapshot(snapshot_to_message(snapshot), timeout=5)
             assert result_to_dict(result)["cpu_percent"] == 0
 
-            # Produz duas amostras || Produce two samples
+            # Produz duas amostras
             async def requests():
                 for _ in range(2):
                     yield snapshot_to_message(snapshot)
@@ -48,7 +48,7 @@ async def test_unary_stream_and_zero_values(snapshot, monkeypatch):
         await server.stop(0)
 
 
-# Falha de publicação não retorna sucesso || Publication failure cannot report success
+# Falha de publicação não retorna sucesso
 @pytest.mark.asyncio
 async def test_publish_failure(snapshot, monkeypatch):
     monkeypatch.setattr(analysis_server.OllamaClient, "analyze", AsyncMock(return_value="OK"))
@@ -63,7 +63,7 @@ async def test_publish_failure(snapshot, monkeypatch):
     assert context.abort.call_args.args[0] == grpc.StatusCode.UNAVAILABLE
 
 
-# Confirma depois de persistir || Acknowledge after persistence
+# Confirma depois de persistir
 def test_consumer_ack(database, analysis):
     channel = MagicMock()
     method = MagicMock()
@@ -74,7 +74,7 @@ def test_consumer_ack(database, analysis):
     channel.basic_nack.assert_not_called()
 
 
-# Mensagem inválida segue para fila de falhas || Send malformed messages to the dead queue
+# Mensagem inválida segue para fila de falhas
 def test_consumer_dead_letter():
     channel = MagicMock()
     method = MagicMock()
@@ -83,7 +83,7 @@ def test_consumer_dead_letter():
     channel.basic_ack.assert_not_called()
 
 
-# Falha no banco mantém mensagem sem ACK || Database failures leave the message unacknowledged
+# Falha no banco mantém mensagem sem ACK
 def test_database_failure(monkeypatch, analysis):
     monkeypatch.setattr(
         consumer, "save_result", MagicMock(side_effect=sqlite3.OperationalError("locked"))
@@ -95,7 +95,7 @@ def test_database_failure(monkeypatch, analysis):
     channel.basic_nack.assert_not_called()
 
 
-# O retorno vazio do Pika não é falha || Pika's empty return is not a failure
+# O retorno vazio do Pika não é falha
 def test_publisher_confirmation(monkeypatch, analysis):
     connection = MagicMock()
     channel = connection.channel.return_value

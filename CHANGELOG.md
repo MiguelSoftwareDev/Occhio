@@ -16,3 +16,13 @@
 ## Compatibilidade
 
 O endpoint `/api/history` retorna `{items, total, offset, limit}`. O endpoint de streaming retorna NDJSON incremental. A fila nova é `analysis.results.v2`; mensagens antigas não são migradas. O servidor e o cliente devem regenerar o contrato `.proto` ao atualizar. A entrega não inclui banco de dados nem evidências de inferência real.
+
+## Pixel interface update
+
+- Added the light pixel-art console, compact analysis action, process search/sorting and responsive internal scrolling.
+- Added native application icon extraction with opaque IDs, bounded concurrency and no remote logo lookup.
+- Added dynamic runtime/host information and interval-based per-process CPU/RSS measurements.
+- Added generated walking/typing sprites and five station assets, with a separate movement path and reduced-motion support.
+- Added `AnalyzeProgress` and the live HTTP endpoint; progress advances only on confirmed operations and storage consumption.
+- Preserved unary and bidirectional streaming, analysis history and exports.
+- Added failure-path, progress, runtime and process tests; updated documentation and built assets.

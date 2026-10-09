@@ -3,7 +3,7 @@
 ## Pré-requisitos
 
 - Python 3.12, Docker com Compose v2 e Ollama local.
-- Modelo aberto padrão: `qwen3:1.7b`. O uso de RAM e a latência variam com o hardware; teste antes da apresentação. Não há requisito de GPU no código.
+- Modelo aberto padrão: `qwen3:1.7b`. O uso de RAM e a latência variam com o hardware; dimensione para seu computador. Não há requisito de GPU no código.
 - Node 22 apenas para compilar/modificar React. A entrega ZIP inclui o build.
 - Internet para a preparação. A inferência usa `127.0.0.1` sem proxy e sem seguir redirecionamentos.
 
@@ -25,7 +25,7 @@ Não sobrescreva `.env` se já o configurou. Abra `http://127.0.0.1:8000`. `Ctrl
 
 ## Execução em terminais separados
 
-Útil para comprovar ao professor que há processos independentes. Ative `.venv` e execute cada comando em um terminal, todos na raiz:
+Execução dos serviços como processos independentes. Ative `.venv` e execute cada comando em um terminal, todos na raiz:
 
 ```bash
 python -m backend.services.analysis_server
@@ -54,7 +54,7 @@ A credencial do Compose é exclusivamente para demonstração local. Mudar `.env
 | --- | --- |
 | Ollama indisponível | Execute `ollama list` e `ollama serve`; confira a porta 11434 |
 | Modelo ausente | Execute `ollama pull qwen3:1.7b` e confira o nome em `.env` |
-| Timeout de análise | Faça uma primeira inferência antes da aula; aumente o timeout até 600 se necessário |
+| Timeout de análise | Faça uma primeira inferência antes de medir latência; aumente o timeout até 600 se necessário |
 | gRPC indisponível | Gere o contrato e inicie o servidor; confira conflitos na porta 50051 |
 | RabbitMQ indisponível | `docker compose ps` e `docker compose logs rabbitmq` |
 | Publicada, sem consumo | Inicie `backend.services.consumer`; confira permissões do diretório data |
@@ -66,3 +66,23 @@ A credencial do Compose é exclusivamente para demonstração local. Mudar `.env
 ## Atualizar dependências
 
 `requirements.txt` descreve intervalos diretos; o lock representa o ambiente testado. Após atualizar, rode build, testes e verificação real antes de renovar o lock. O lock usa o servidor HTTP básico do Uvicorn, sem dependências opcionais específicas do Unix.
+
+## Linux e macOS
+
+Instale Python 3.12 com venv, Ollama e Docker com Compose. No macOS, abra Docker Desktop e Ollama; no Linux, inicie os serviços da distribuição (ou ollama serve em outro terminal).
+
+```bash
+python3.12 -m venv .venv
+.venv/bin/python -m pip install -r requirements.lock.txt
+test -f .env || cp .env.example .env
+ollama pull qwen3:1.7b
+bash scripts/start.sh
+```
+
+O Guia da interface separa comandos de Windows, macOS e Linux. Nos scripts, -MonitorOnly (Windows) ou --monitor-only (Unix) inicia somente métricas. -SkipBroker ou --skip-broker usa um RabbitMQ já configurado em RABBITMQ_URL. Esses modos não substituem a inferência ou a mensageria por simulações.
+
+## Discos e amostragem
+
+GET /api/disks enumera volumes montados, inclusive em discos secundários. Partições não são discos físicos: a interface não inventa classificação SSD/HD. Volumes sem montagem não aparecem; volumes sem permissão são sinalizados.
+
+CPU usa o percentual de tempo de CPU do psutil em uma janela de 0,5 s, com nova consulta da interface após 1 s. O Gerenciador de Tarefas pode usar outra janela e métrica de utilização; os valores não precisam coincidir instantaneamente. Memória é total menos disponível, exibida em GiB.

@@ -1,43 +1,20 @@
-# Validação da entrega
+# Validation — pixel interface release
 
-Verificação realizada em ambiente Linux com Python 3.12. A data de referência da revisão é 08/10/2026.
+Validated on Linux with Python 3.12 and Node.js. The release archive includes the compiled Vite frontend.
 
-## Executado
+## Executed checks
 
-| Verificação | Resultado | Escopo |
-| --- | --- | --- |
-| Pytest | 19 testes aprovados | Coletor, validação, SQLite, consumidor, publicador, API e gRPC |
-| Ruff | Aprovado | Código Python, testes e scripts |
-| TypeScript | Aprovado | Tipagem estrita do frontend |
-| Prettier | Aprovado | Formatação do código frontend |
-| Build Vite | Aprovado | Assets de produção incluídos no ZIP |
-| Navegador Chromium | Sem erro JavaScript nos cenários executados | Navegação e interface |
-| Layout | Sem overflow horizontal nas telas verificadas | Visão geral, histórico, pipeline e guia em 390, 768 e 1440 px |
-| Interações com respostas controladas | Aprovado | Análise única, estado consumido, modal/Escape, exportação JSON, streaming, histórico e erro HTTP |
-| Métricas ao vivo | Aprovado | Coleta psutil no ambiente de execução; screenshots em docs/images |
+- 26 Python tests covering validation, collection, persistence, API origin/host protection, real loopback gRPC, publisher confirmation, consumer acknowledgement, live progress, runtime identity, process sampling, secondary volumes and ordered bidirectional progress.
+- TypeScript strict typecheck and Vite production build.
+- Ruff checks for backend, tests and scripts; Prettier for frontend source.
+- Browser checks at 1512 px desktop width and 390 px mobile width, using live Linux metrics/processes: no page overflow or JavaScript errors; search and navigation controls exercised.
+- Controlled browser pipeline run: analysis disables the action while busy, the penguin walks/types without crossing station labels/bars, five confirmed stages reach 100%, history details open, and reduced motion disables sprite animation.
+- Separate 18-second animation rendered from the same assets into MP4. Its progress is illustrative, not live telemetry.
 
-Os testes de transporte abrem um servidor gRPC real em uma porta loopback e exercitam chamadas unárias e streaming. Ollama e publicação AMQP são substituídos por implementações de teste nesses casos. Os testes de interface usam respostas controladas, claramente separadas do produto; o aplicativo entregue não tem modo de dados fictícios.
+## External-service limits
 
-O pytest emitiu um aviso de depreciação do adaptador TestClient da dependência Starlette em relação ao httpx; não houve falha. Uma atualização futura dessas dependências deve repetir a suíte.
+The gRPC transport tests use a real loopback server. Ollama inference and RabbitMQ adapters are isolated in tests; a complete run against an installed model and a real broker/consumer remains an environment-level check. Use `python scripts/verify_e2e.py` with those services running.
 
-## Não executado neste ambiente
+Windows executable-icon extraction and macOS bundle-icon extraction are implemented but were not executed on their native operating systems here. Missing icons or restricted executable access produce an empty placeholder; no application logos are generated. Linux process collection was exercised in the browser.
 
-- Inferência no Ollama com o modelo qwen3:1.7b.
-- Comunicação com um RabbitMQ real e persistência após consumo real.
-- Teste completo de queda/retorno do broker.
-- Instalação e execução no Windows ou no computador da equipe.
-- Benchmark de desempenho, carga, segurança ou alta disponibilidade.
-
-Ollama e Docker não estavam instalados no ambiente desta revisão. Portanto, os testes aprovados não constituem prova do fluxo real ponta a ponta nem permitem afirmar que a aplicação está homologada para produção.
-
-## Verificação obrigatória antes de apresentar
-
-Execute os serviços no seu computador e rode:
-
-```bash
-python scripts/verify_e2e.py
-```
-
-O verificador exige prontidão dos serviços, executa uma análise unária e duas de streaming, espera a gravação de cada ID pelo consumidor e só então salva `evidence/e2e.json` com status `passed`. Em falha, retorna código diferente de zero. Use também o experimento de consumidor parado descrito em DEMONSTRACAO.md.
-
-Os screenshots entregues mostram o console com métricas reais do ambiente de teste e serviços de inferência/mensageria indisponíveis. Não representam uma execução bem-sucedida do Ollama.
+The standalone animation and any test adapter data are previews only. Test adapters are outside the application and are not included in the release archive.

@@ -6,7 +6,7 @@ from pathlib import Path
 import psutil
 
 
-# Coleta métricas reais do computador || Collect real computer metrics
+# Coleta métricas reais do computador
 def collect_snapshot() -> dict:
     memory = psutil.virtual_memory()
     disk_path = Path.home().anchor or "/"
@@ -16,7 +16,7 @@ def collect_snapshot() -> dict:
         "captured_at": datetime.now(timezone.utc).isoformat(),
         "cpu_percent": psutil.cpu_percent(interval=0.5),
         "memory_percent": memory.percent,
-        "memory_used_bytes": memory.used,
+        "memory_used_bytes": memory.total - memory.available,
         "memory_total_bytes": memory.total,
         "disk_percent": disk.percent,
         "process_count": len(psutil.pids()),

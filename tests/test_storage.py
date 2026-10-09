@@ -2,7 +2,7 @@ import pytest
 from pydantic import ValidationError
 
 
-# Mantém uma gravação por evento || Keep one row per event
+# Mantém uma gravação por evento
 def test_idempotent_delivery(database, analysis):
     database.save_result(analysis)
     first = database.read_results()[0]
@@ -13,14 +13,14 @@ def test_idempotent_delivery(database, analysis):
     assert first["analysis_text"] == analysis["analysis_text"]
 
 
-# Impede gravação de payload inválido || Reject invalid payloads
+# Impede gravação de payload inválido
 def test_rejects_invalid_event(database, analysis):
     with pytest.raises(ValidationError):
         database.save_result({**analysis, "cpu_percent": 101})
     assert database.count_results() == 0
 
 
-# Aplica limite e deslocamento || Apply limit and offset
+# Aplica limite e deslocamento
 def test_pagination(database, analysis):
     import uuid
 

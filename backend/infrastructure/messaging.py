@@ -10,7 +10,7 @@ DEAD_QUEUE = "analysis.failed.v2"
 ROUTING_KEY = "system.analysis"
 
 
-# Abre a conexão com o broker || Open the broker connection
+# Abre a conexão com o broker
 def open_connection() -> pika.BlockingConnection:
     parameters = pika.URLParameters(SETTINGS.rabbitmq_url)
     parameters.connection_attempts = 2
@@ -22,7 +22,7 @@ def open_connection() -> pika.BlockingConnection:
     return pika.BlockingConnection(parameters)
 
 
-# Declara a topologia durável || Declare the durable topology
+# Declara a topologia durável
 def prepare_queue(channel):
     channel.exchange_declare(exchange=EXCHANGE_NAME, exchange_type="topic", durable=True)
     channel.queue_declare(queue=DEAD_QUEUE, durable=True)
@@ -35,7 +35,7 @@ def prepare_queue(channel):
     return queue
 
 
-# Publica com confirmação do broker || Publish with broker confirmation
+# Publica com confirmação do broker
 def publish_result(result: dict) -> None:
     connection = open_connection()
     try:
@@ -59,7 +59,7 @@ def publish_result(result: dict) -> None:
             connection.close()
 
 
-# Consulta filas e consumidores || Check queues and consumers
+# Consulta filas e consumidores
 def get_broker_status() -> dict:
     connection = open_connection()
     try:

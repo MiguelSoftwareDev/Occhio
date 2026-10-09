@@ -2,6 +2,7 @@ import asyncio
 import logging
 import time
 import uuid
+from contextlib import suppress
 from datetime import datetime, timezone
 
 import grpc
@@ -21,26 +22,75 @@ logger = logging.getLogger("occhio.analysis")
 
 
 class SystemAnalysisService(pb2_grpc.SystemAnalysisServicer):
-    # Prepara o serviço de análise || Set up the analysis service
+    # Prepara o serviço de análise
     def __init__(self) -> None:
         self.ollama = OllamaClient()
 
-    # Analisa uma coleta || Analyze one snapshot
+    # Analisa uma coleta
     async def AnalyzeSnapshot(self, request, context):
         return await self._analyze(request, context)
 
-    # Analisa cada coleta do fluxo || Analyze each streamed snapshot
+    # Analisa cada coleta do fluxo
     async def StreamSnapshots(self, request_iterator, context):
         async for request in request_iterator:
             yield await self._analyze(request, context)
 
-    # Analisa e publica o resultado || Analyze and publish the result
-    async def _analyze(self, request, context):
+    async def StreamProgress(self, request_iterator, context):
+        async for request in request_iterator:
+            yield pb2.ProgressEvent(stage="collect", status="done")
+            yield pb2.ProgressEvent(stage="grpc", status="running")
+            async for event in self.AnalyzeProgress(request, context):
+                yield event
+
+    # Emite eventos reais de inferência e publicação
+    async def AnalyzeProgress(self, request, context):
+        queue = asyncio.Queue()
+
+        async def notify(stage, status):
+            await queue.put(pb2.ProgressEvent(stage=stage, status=status))
+
+        class ProgressFailure(Exception):
+            def __init__(self, code, detail):
+                self.code = code
+                self.detail = detail
+
+        class WorkerContext:
+            async def abort(self, code, detail):
+                raise ProgressFailure(code, detail)
+
+        async def run():
+            try:
+                result = await self._analyze(request, WorkerContext(), notify)
+                await queue.put(pb2.ProgressEvent(result=result))
+            except ProgressFailure as error:
+                await queue.put(error)
+            except Exception:
+                await queue.put(ProgressFailure(grpc.StatusCode.UNAVAILABLE, "Falha na análise"))
+            finally:
+                await queue.put(None)
+
+        task = asyncio.create_task(run())
+        try:
+            while (event := await queue.get()) is not None:
+                if isinstance(event, ProgressFailure):
+                    await context.abort(event.code, event.detail)
+                yield event
+            await task
+        finally:
+            task.cancel()
+            with suppress(asyncio.CancelledError):
+                await task
+
+    # Analisa e publica o resultado
+    async def _analyze(self, request, context, notify=None):
         try:
             Snapshot.model_validate(message_to_snapshot(request))
         except ValidationError:
             await context.abort(grpc.StatusCode.INVALID_ARGUMENT, "Métricas inválidas")
         try:
+            if notify:
+                await notify("grpc", "done")
+                await notify("ollama", "running")
             started = time.perf_counter()
             analysis_text = await self.ollama.analyze(message_to_snapshot(request))
             result = pb2.AnalysisResult(
@@ -64,7 +114,12 @@ class SystemAnalysisService(pb2_grpc.SystemAnalysisServicer):
                 result, preserving_proto_field_name=True, always_print_fields_with_no_presence=True
             )
             Analysis.model_validate(payload)
+            if notify:
+                await notify("ollama", "done")
+                await notify("rabbitmq", "running")
             await asyncio.to_thread(publish_result, payload)
+            if notify:
+                await notify("rabbitmq", "done")
             logger.info("Resultado publicado: %s", result.analysis_id)
             return result
         except Exception as error:
@@ -75,7 +130,7 @@ class SystemAnalysisService(pb2_grpc.SystemAnalysisServicer):
             )
 
 
-# Inicia o servidor gRPC || Start the gRPC server
+# Inicia o servidor gRPC
 async def serve() -> None:
     server = grpc.aio.server(maximum_concurrent_rpcs=2)
     pb2_grpc.add_SystemAnalysisServicer_to_server(SystemAnalysisService(), server)

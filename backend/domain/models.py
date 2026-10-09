@@ -19,7 +19,7 @@ class Snapshot(BaseModel):
     process_count: int = Field(ge=0)
     uptime_seconds: int = Field(ge=0)
 
-    # Valida a memória e o fuso || Validate memory and timezone
+    # Valida a memória e o fuso
     @model_validator(mode="after")
     def validate_snapshot(self):
         if self.memory_used_bytes > self.memory_total_bytes:

@@ -3,13 +3,10 @@ import {
   ArrowRight,
   BookOpen,
   ChevronRight,
-  CircleHelp,
   Eye,
   GitBranch,
   History as HistoryIcon,
   LayoutDashboard,
-  ShieldCheck,
-  Terminal,
 } from "lucide-react";
 import { Detail } from "./components/Detail";
 import { Overview } from "./pages/Overview";
@@ -17,26 +14,37 @@ import { HistoryPage } from "./pages/HistoryPage";
 import { PipelinePage } from "./pages/PipelinePage";
 import { GuidePage } from "./pages/GuidePage";
 import { usePolling } from "./hooks/usePolling";
-import { request, streamAnalyses } from "./lib/api";
-import type { Analysis, Health, History, Snapshot, View } from "./lib/types";
+import { request, streamAnalyses, liveAnalysis } from "./lib/api";
+import { emptyProgress } from "./lib/types";
+import eye from "./assets/eye-blue.png";
+import type {
+  Progress,
+  RuntimeInfo,
+  Analysis,
+  Health,
+  History,
+  Snapshot,
+  View,
+} from "./lib/types";
 
 const nav = [
   { id: "overview", title: "Visão geral", icon: LayoutDashboard },
   { id: "history", title: "Histórico", icon: HistoryIcon },
   { id: "pipeline", title: "Pipeline", icon: GitBranch },
-  { id: "guide", title: "Guia de execução", icon: BookOpen },
+  { id: "guide", title: "Guia", icon: BookOpen },
 ] as const;
-// Coordena o console e as requisições || Coordinate the console and requests
+// Coordena o console e as requisições
 export default function App() {
   const [view, setView] = useState<View>("overview");
   const [offset, setOffset] = useState(0);
-  const metrics = usePolling<Snapshot>("/metrics", 2500);
+  const runtime = usePolling<RuntimeInfo>("/runtime", 30000);
+  const [progress, setProgress] = useState<Progress>(emptyProgress);
+  const metrics = usePolling<Snapshot>("/metrics", 1000);
   const health = usePolling<Health>("/health", 10000);
   const history = usePolling<History>(
     `/history?limit=10&offset=${offset}`,
     4000,
   );
-  const [samples, setSamples] = useState<Snapshot[]>([]);
   const [selected, setSelected] = useState<Analysis | null>(null);
   const [busy, setBusy] = useState(false);
   const [mode, setMode] = useState<"once" | "stream">("once");
@@ -47,10 +55,6 @@ export default function App() {
   const [published, setPublished] = useState<Analysis | null>(null);
   const abort = useRef<AbortController | null>(null);
   const [confirmed, setConfirmed] = useState<Analysis | null>(null);
-  useEffect(() => {
-    if (metrics.data)
-      setSamples((values) => [...values, metrics.data!].slice(-60));
-  }, [metrics.data]);
   useEffect(() => () => abort.current?.abort(), []);
   useEffect(() => {
     if (!published) return;
@@ -63,7 +67,10 @@ export default function App() {
           `/history/${published!.analysis_id}`,
           { signal: controller.signal },
         );
-        if (active) setConfirmed(result);
+        if (active) {
+          setConfirmed(result);
+          setProgress((p) => ({ ...p, sqlite: "done" }));
+        }
       } catch {
         if (active) timer = setTimeout(check, 2000);
       }
@@ -83,9 +90,12 @@ export default function App() {
   const m = metrics.error ? null : metrics.data;
   const h = health.error ? null : health.data;
 
-  // Executa o pipeline solicitado || Run the requested pipeline
+  // Executa o pipeline solicitado
   async function analyze() {
     setBusy(true);
+    setProgress(emptyProgress());
+    setPublished(null);
+    setConfirmed(null);
     setFailure("");
     setReceived(0);
     setMessage(
@@ -97,26 +107,56 @@ export default function App() {
     abort.current = controller;
     try {
       if (mode === "once") {
-        const result = await request<Analysis>("/analyze/once", {
-          method: "POST",
-          signal: controller.signal,
-        });
-        setPublished(result);
-        setReceived(1);
+        await liveAnalysis((event) => {
+          if (event.type === "progress")
+            setProgress((p) => ({ ...p, [event.stage]: event.status }));
+          if (event.type === "result") {
+            setPublished(event.result);
+            setReceived(1);
+          }
+        }, controller.signal);
       } else
         await streamAnalyses(
           count,
           (result) => {
+            setProgress({
+              collect: "done",
+              grpc: "done",
+              ollama: "done",
+              rabbitmq: "done",
+              sqlite: "waiting",
+            });
             setPublished(result);
             setReceived((value) => value + 1);
           },
           controller.signal,
+          (event) => {
+            if (event.type !== "progress") return;
+            if (event.stage === "collect") {
+              setPublished(null);
+              setConfirmed(null);
+              setProgress({ ...emptyProgress(), collect: event.status });
+            } else setProgress((p) => ({ ...p, [event.stage]: event.status }));
+          },
         );
       setMessage(
         "Publicação confirmada pelo broker. O consumo é verificado separadamente.",
       );
       history.refresh();
     } catch (err) {
+      setProgress(
+        (p) =>
+          Object.fromEntries(
+            Object.entries(p).map(([id, status]) => [
+              id,
+              status === "running"
+                ? controller.signal.aborted
+                  ? "cancelled"
+                  : "error"
+                : status,
+            ]),
+          ) as Progress,
+      );
       if (controller.signal.aborted)
         setMessage(
           "Solicitação cancelada. Resultados já publicados continuam no pipeline.",
@@ -145,21 +185,9 @@ export default function App() {
             setView("overview");
           }}
         >
-          <span className="brand-symbol">
-            <Eye size={26} />
-          </span>
-          occhio<span className="brand-dot">.</span>
+          <img className="brand-eye" src={eye} alt="" />
+          <span>Occhio</span>
         </a>
-        <div className="workspace">
-          <span className="workspace-icon">
-            <Terminal size={16} />
-          </span>
-          <div>
-            <strong>Local workspace</strong>
-            <small>Observabilidade de sistemas</small>
-          </div>
-          <span className="version">v2</span>
-        </div>
         <div className="nav-label">WORKSPACE</div>
         <nav aria-label="Menu principal">
           {nav.map((item) => (
@@ -180,25 +208,17 @@ export default function App() {
           ))}
         </nav>
         <div className="sidebar-bottom">
-          <div className="local-card">
-            <ShieldCheck size={21} />
-            <strong>Seus dados ficam aqui.</strong>
-            <p>
-              Inferência local. Sem enviar métricas para serviços de IA na
-              nuvem.
-            </p>
-          </div>
-          <button className="help-link" onClick={() => setView("guide")}>
-            <CircleHelp size={16} />
-            Como executar o Occhio
-            <ArrowRight size={14} />
-          </button>
-          <div className="profile">
-            <span>OC</span>
-            <div>
-              <strong>Occhio Console</strong>
-              <small>Projeto de sistemas · Tema 2</small>
-            </div>
+          <div className="host-card">
+            <span className={`dot ${runtime.data ? "green" : "amber"}`} />
+            <strong>{runtime.data?.host_name || "Conectando…"}</strong>
+            <small>
+              {[runtime.data?.os, runtime.data?.environment]
+                .filter(
+                  (value, index, values) =>
+                    value && values.indexOf(value) === index,
+                )
+                .join(" · ") || "Aguardando ambiente"}
+            </small>
           </div>
         </div>
       </aside>
@@ -211,7 +231,9 @@ export default function App() {
           </div>
           <span className="local-badge">
             <span className="dot green" />
-            Ambiente local
+            {runtime.error
+              ? "Ambiente indisponível"
+              : runtime.data?.environment || "Identificando ambiente"}
           </span>
         </header>
         <main id="main">
@@ -220,7 +242,7 @@ export default function App() {
               <span className="eyebrow">OBSERVE. ENTENDA. ACOMPANHE.</span>
               <h1>
                 {view === "overview"
-                  ? "Seu sistema, em perspectiva."
+                  ? "Visão do sistema"
                   : view === "history"
                     ? "Histórico de análises."
                     : view === "pipeline"
@@ -234,7 +256,7 @@ export default function App() {
                     ? "Resultados recebidos pela fila e persistidos pelo consumidor."
                     : view === "pipeline"
                       ? "Acompanhe os serviços que conectam cada etapa do processamento."
-                      : "Execute o ambiente e demonstre o fluxo completo do Tema 2."}
+                      : "Prepare os serviços e explore o fluxo de análise."}
               </p>
             </div>
             <div className={`status-pill ${h?.ok ? "ok" : ""}`}>
@@ -254,9 +276,10 @@ export default function App() {
           )}
           {view === "overview" && (
             <Overview
+              runtime={runtime.data}
+              progress={progress}
               m={m}
               h={h}
-              samples={samples}
               mode={mode}
               setMode={setMode}
               busy={busy}
@@ -280,7 +303,9 @@ export default function App() {
               setSelected={setSelected}
             />
           )}
-          {view === "pipeline" && <PipelinePage h={h} health={health} />}
+          {view === "pipeline" && (
+            <PipelinePage h={h} health={health} progress={progress} />
+          )}
           {view === "guide" && <GuidePage />}
           <footer>
             <span>

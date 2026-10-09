@@ -5,7 +5,7 @@ from backend.services.collector import collect_snapshot
 
 
 class CollectorTests(unittest.TestCase):
-    # Confere o formato das métricas coletadas || Check the collected metric format
+    # Confere o formato das métricas coletadas
     @patch("backend.services.collector.psutil.boot_time", return_value=1000)
     @patch("backend.services.collector.time.time", return_value=1600)
     @patch("backend.services.collector.psutil.pids", return_value=[1, 2, 3])
@@ -24,12 +24,13 @@ class CollectorTests(unittest.TestCase):
         memory.return_value = type(
             "Memory",
             (),
-            {"percent": 40.0, "used": 4_000, "total": 10_000},
+            {"percent": 40.0, "used": 3_700, "available": 6_000, "total": 10_000},
         )()
         disk.return_value = type("Disk", (), {"percent": 55.0})()
 
         snapshot = collect_snapshot()
 
+        self.assertEqual(snapshot["memory_used_bytes"], 4_000)
         self.assertEqual(snapshot["cpu_percent"], 25.0)
         self.assertEqual(snapshot["memory_percent"], 40.0)
         self.assertEqual(snapshot["disk_percent"], 55.0)

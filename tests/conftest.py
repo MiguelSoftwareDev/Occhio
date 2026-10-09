@@ -6,7 +6,7 @@ import pytest
 from backend.infrastructure import storage
 
 
-# Fornece uma coleta determinística || Provide a deterministic snapshot
+# Fornece uma coleta determinística
 @pytest.fixture
 def snapshot():
     return {
@@ -22,7 +22,7 @@ def snapshot():
     }
 
 
-# Fornece um resultado válido || Provide a valid result
+# Fornece um resultado válido
 @pytest.fixture
 def analysis(snapshot):
     return {
@@ -36,7 +36,7 @@ def analysis(snapshot):
     }
 
 
-# Isola o banco por teste || Isolate each test database
+# Isola o banco por teste
 @pytest.fixture
 def database(tmp_path, monkeypatch):
     monkeypatch.setattr(

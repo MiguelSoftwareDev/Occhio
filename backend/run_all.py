@@ -26,13 +26,13 @@ PROCESSES = [
 ]
 
 
-# Exibe a saída de cada processo || Show each process output
+# Exibe a saída de cada processo
 def print_output(name: str, process: subprocess.Popen) -> None:
     for line in process.stdout:
         print(f"[{name}] {line}", end="", flush=True)
 
 
-# Inicia os serviços locais || Start local services
+# Inicia os serviços locais
 def run() -> None:
     generated_dir = PROJECT_ROOT / "backend" / "generated"
     generated_files = [

@@ -34,6 +34,16 @@ class SystemAnalysisStub:
         Args:
             channel: A grpc.Channel.
         """
+        self.StreamProgress = channel.stream_stream(
+                '/occhio.monitor.v1.SystemAnalysis/StreamProgress',
+                request_serializer=system__monitor__pb2.SystemSnapshot.SerializeToString,
+                response_deserializer=system__monitor__pb2.ProgressEvent.FromString,
+                _registered_method=True)
+        self.AnalyzeProgress = channel.unary_stream(
+                '/occhio.monitor.v1.SystemAnalysis/AnalyzeProgress',
+                request_serializer=system__monitor__pb2.SystemSnapshot.SerializeToString,
+                response_deserializer=system__monitor__pb2.ProgressEvent.FromString,
+                _registered_method=True)
         self.AnalyzeSnapshot = channel.unary_unary(
                 '/occhio.monitor.v1.SystemAnalysis/AnalyzeSnapshot',
                 request_serializer=system__monitor__pb2.SystemSnapshot.SerializeToString,
@@ -48,6 +58,18 @@ class SystemAnalysisStub:
 
 class SystemAnalysisServicer:
     """Missing associated documentation comment in .proto file."""
+
+    def StreamProgress(self, request_iterator, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def AnalyzeProgress(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
 
     def AnalyzeSnapshot(self, request, context):
         """Missing associated documentation comment in .proto file."""
@@ -64,6 +86,16 @@ class SystemAnalysisServicer:
 
 def add_SystemAnalysisServicer_to_server(servicer, server):
     rpc_method_handlers = {
+            'StreamProgress': grpc.stream_stream_rpc_method_handler(
+                    servicer.StreamProgress,
+                    request_deserializer=system__monitor__pb2.SystemSnapshot.FromString,
+                    response_serializer=system__monitor__pb2.ProgressEvent.SerializeToString,
+            ),
+            'AnalyzeProgress': grpc.unary_stream_rpc_method_handler(
+                    servicer.AnalyzeProgress,
+                    request_deserializer=system__monitor__pb2.SystemSnapshot.FromString,
+                    response_serializer=system__monitor__pb2.ProgressEvent.SerializeToString,
+            ),
             'AnalyzeSnapshot': grpc.unary_unary_rpc_method_handler(
                     servicer.AnalyzeSnapshot,
                     request_deserializer=system__monitor__pb2.SystemSnapshot.FromString,
@@ -84,6 +116,60 @@ def add_SystemAnalysisServicer_to_server(servicer, server):
  # This class is part of an EXPERIMENTAL API.
 class SystemAnalysis:
     """Missing associated documentation comment in .proto file."""
+
+    @staticmethod
+    def StreamProgress(request_iterator,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.stream_stream(
+            request_iterator,
+            target,
+            '/occhio.monitor.v1.SystemAnalysis/StreamProgress',
+            system__monitor__pb2.SystemSnapshot.SerializeToString,
+            system__monitor__pb2.ProgressEvent.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def AnalyzeProgress(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_stream(
+            request,
+            target,
+            '/occhio.monitor.v1.SystemAnalysis/AnalyzeProgress',
+            system__monitor__pb2.SystemSnapshot.SerializeToString,
+            system__monitor__pb2.ProgressEvent.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
 
     @staticmethod
     def AnalyzeSnapshot(request,

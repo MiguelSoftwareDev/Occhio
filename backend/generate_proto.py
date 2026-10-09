@@ -7,7 +7,7 @@ PROTO_DIR = PROJECT_ROOT / "proto"
 OUTPUT_DIR = PROJECT_ROOT / "backend" / "generated"
 
 
-# Gera os módulos Python do contrato || Generate Python modules from the contract
+# Gera os módulos Python do contrato
 def generate() -> None:
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     result = protoc.main(

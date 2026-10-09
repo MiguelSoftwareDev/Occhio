@@ -1,26 +1,33 @@
+import { useState } from "react";
+import { StorageDialog } from "../components/StorageDialog";
 import {
   Activity,
   ArrowRight,
-  Check,
   Clock3,
   Cpu,
-  Eye,
   HardDrive,
-  LoaderCircle,
   MemoryStick,
   Play,
   Server,
   Square,
 } from "lucide-react";
 import { Metric } from "../components/Metric";
-import { MetricChart } from "../components/MetricChart";
 import { Pipeline } from "../components/Pipeline";
+import { ProcessRadar, memorySize } from "../components/ProcessRadar";
 import { percent, time } from "../lib/format";
-import type { Analysis, Health, Snapshot, View } from "../lib/types";
+import type {
+  Analysis,
+  Health,
+  Snapshot,
+  View,
+  Progress,
+  RuntimeInfo,
+} from "../lib/types";
 interface Props {
   m: Snapshot | null;
   h: Health | null;
-  samples: Snapshot[];
+  runtime: RuntimeInfo | null;
+  progress: Progress;
   mode: "once" | "stream";
   setMode: (v: "once" | "stream") => void;
   busy: boolean;
@@ -35,11 +42,11 @@ interface Props {
   setView: (v: View) => void;
   setSelected: (v: Analysis) => void;
 }
-
 export function Overview({
   m,
   h,
-  samples,
+  runtime,
+  progress,
   mode,
   setMode,
   busy,
@@ -54,115 +61,169 @@ export function Overview({
   setView,
   setSelected,
 }: Props) {
+  const [storageOpen, setStorageOpen] = useState(false);
+  const missing = [
+    !h?.ollama.model_available && "Ollama/modelo",
+    !h?.grpc.available && "gRPC",
+    !h?.rabbitmq.available && "RabbitMQ",
+  ]
+    .filter(Boolean)
+    .join(", ");
+  const available =
+    !!m &&
+    !!h?.ollama.model_available &&
+    !!h?.grpc.available &&
+    !!h?.rabbitmq.available;
   return (
     <>
       <div className="host-strip">
         <span>
           <Server size={16} />
-          <strong>{m?.host_name || "Conectando ao host"}</strong>
-          <span className="host-tag">HOST LOCAL</span>
+          <strong>
+            {m?.host_name || runtime?.host_name || "Identificando host…"}
+          </strong>
+          <span className="host-tag">{runtime?.os || "—"}</span>
         </span>
         <small>
-          <Clock3 size={13} />
-          {m
-            ? `Ligado há ${Math.floor(Number(m.uptime_seconds) / 3600)}h`
-            : "—"}
-          <i />
+          <Clock3 size={14} />
           Última coleta {time(m?.captured_at)}
         </small>
       </div>
       <section className="metrics-grid" aria-label="Indicadores do sistema">
         <Metric
-          label="Uso de CPU"
+          label="CPU"
           value={percent(m?.cpu_percent)}
           progress={m?.cpu_percent}
-          sub="Utilização no intervalo de coleta"
+          sub="Uso total da máquina"
           icon={Cpu}
         />
         <Metric
-          label="Memória RAM"
+          label="Memória"
           value={percent(m?.memory_percent)}
           progress={m?.memory_percent}
           sub={
             m
-              ? `${(Number(m.memory_used_bytes) / 2 ** 30).toFixed(1)} de ${(Number(m.memory_total_bytes) / 2 ** 30).toFixed(1)} GiB em uso`
+              ? `${memorySize(Number(m.memory_used_bytes))} de ${memorySize(Number(m.memory_total_bytes))}`
               : "Aguardando coleta"
           }
           icon={MemoryStick}
-          tone="violet"
         />
         <Metric
           label="Armazenamento"
           value={percent(m?.disk_percent)}
           progress={m?.disk_percent}
-          sub="Ocupação do volume principal"
+          sub="Volume do sistema · clique no ícone para ver todos"
+          onClick={() => setStorageOpen(true)}
           icon={HardDrive}
-          tone="blue"
         />
         <Metric
-          label="Processos ativos"
+          label="Processos"
           value={m?.process_count.toString() || "—"}
-          sub="Processos identificados pelo SO"
+          sub="Identificados pelo sistema"
           icon={Activity}
           tone="gray"
         />
       </section>
-      <div className="dashboard-grid">
-        <section className="panel chart-panel">
-          <div className="panel-heading">
-            <div>
-              <h2>Atividade do sistema</h2>
-              <p>Uma leitura contínua dos recursos do host.</p>
-            </div>
-            <span className="soft-tag">
-              <span className={`dot ${m ? "green" : "amber"}`} />
-              {m ? "Ao vivo" : "Sem conexão"}
+      <div className="radar-top">
+        <section className="panel radar-heading">
+          <h2>
+            Radar de processos{" "}
+            <span className="slashes" aria-hidden="true">
+              ///
             </span>
-          </div>
-          <div className="chart-legend">
+          </h2>
+          <div className="memory-summary">
+            <MemoryStick size={18} />
             <span>
-              <i className="lime-bg" />
-              CPU <strong>{percent(m?.cpu_percent)}%</strong>
+              Total{" "}
+              <strong>
+                {m ? memorySize(Number(m.memory_total_bytes)) : "—"}
+              </strong>
             </span>
             <span>
-              <i className="violet-bg" />
-              Memória <strong>{percent(m?.memory_percent)}%</strong>
+              Em uso{" "}
+              <strong>
+                {m ? memorySize(Number(m.memory_used_bytes)) : "—"}
+              </strong>
             </span>
-            <small>Últimas 60 coletas</small>
+            <strong>{percent(m?.memory_percent)}%</strong>
           </div>
-          <MetricChart samples={samples} />
         </section>
-        <section className="panel run-panel">
-          <div className="run-icon">
-            <Eye size={22} />
-          </div>
-          <span className="eyebrow">INTELIGÊNCIA LOCAL</span>
-          <h2>Entenda o que está acontecendo.</h2>
-          <p>
-            Envie uma coleta para o Ollama e receba uma análise contextual do
-            sistema.
-          </p>
-          <div className="segmented" aria-label="Modo de análise">
-            <button
-              aria-pressed={mode === "once"}
+        <div className="panel action-box">
+          <button
+            className="button primary"
+            disabled={busy || !available}
+            onClick={() => void analyze()}
+            title={
+              !available ? "Verifique os serviços na aba Pipeline" : undefined
+            }
+          >
+            <Play size={17} />
+            {busy
+              ? "Analisando…"
+              : mode === "stream"
+                ? "Iniciar streaming"
+                : "Analisar agora"}
+          </button>
+        </div>
+      </div>
+      <p className="monitor-caption">
+        Monitoramento ao vivo · A análise por IA só começa quando você solicita.
+      </p>
+      <ProcessRadar />
+      {storageOpen && <StorageDialog close={() => setStorageOpen(false)} />}
+      {!available && (
+        <div className="setup-line">
+          {!m
+            ? "Aguardando métricas da máquina monitorada."
+            : `Análise manual indisponível: ${missing}. Abra o Guia para iniciar os serviços.`}
+          <button className="text-button" onClick={() => setView("pipeline")}>
+            Ver serviços <ArrowRight size={14} />
+          </button>
+        </div>
+      )}
+      {(message || failure) && (
+        <div
+          className={`notice ${failure ? "error" : ""}`}
+          role={failure ? "alert" : "status"}
+        >
+          {failure || message}
+        </div>
+      )}
+      <section className="panel pipeline-panel">
+        <div className="panel-heading">
+          <h2>
+            Pipeline de processamento{" "}
+            <span className="slashes" aria-hidden="true">
+              ///
+            </span>
+          </h2>
+          <button className="text-button" onClick={() => setView("pipeline")}>
+            Serviços <ArrowRight size={14} />
+          </button>
+        </div>
+        <Pipeline health={h} progress={progress} />
+      </section>
+      <details className="analysis-options">
+        <summary>
+          Opções de análise{" "}
+          {busy && mode === "stream" ? `· ${received}/${count}` : ""}
+        </summary>
+        <div>
+          <label>
+            Modo{" "}
+            <select
               disabled={busy}
-              className={mode === "once" ? "selected" : ""}
-              onClick={() => setMode("once")}
+              value={mode}
+              onChange={(e) => setMode(e.target.value as "once" | "stream")}
             >
-              Análise única
-            </button>
-            <button
-              aria-pressed={mode === "stream"}
-              disabled={busy}
-              className={mode === "stream" ? "selected" : ""}
-              onClick={() => setMode("stream")}
-            >
-              Streaming
-            </button>
-          </div>
+              <option value="once">Análise única</option>
+              <option value="stream">Streaming gRPC</option>
+            </select>
+          </label>
           {mode === "stream" && (
-            <label className="count-label">
-              Quantidade de coletas
+            <label>
+              Coletas{" "}
               <select
                 disabled={busy}
                 value={count}
@@ -174,84 +235,21 @@ export function Overview({
               </select>
             </label>
           )}
-          <button
-            className="button primary"
-            disabled={
-              busy ||
-              !m ||
-              !h?.ollama.model_available ||
-              !h?.grpc.available ||
-              !h?.rabbitmq.available
-            }
-            onClick={() => void analyze()}
-          >
-            {busy ? (
-              <LoaderCircle className="spin" size={17} />
-            ) : (
-              <Play size={16} />
-            )}{" "}
-            {busy
-              ? mode === "stream"
-                ? `Analisando · ${received}/${count}`
-                : "Analisando…"
-              : mode === "once"
-                ? "Analisar agora"
-                : "Iniciar streaming"}
-            {!busy && <ArrowRight size={16} />}
-          </button>
-          {busy && (
-            <button className="cancel" onClick={() => cancel()}>
-              <Square size={12} />
-              Cancelar solicitação
-            </button>
-          )}
-          <small className="model-caption">
-            {h?.ollama.model || "Ollama"} · execução no seu computador
-          </small>
-          {!h?.ok && (
-            <small className="setup-hint">
-              Confira os serviços na aba Pipeline.
-            </small>
-          )}
-        </section>
-      </div>
-      {(message || failure) && (
-        <div
-          className={`notice ${failure ? "error" : ""}`}
-          role={failure ? "alert" : "status"}
-        >
-          {failure || message}
+          <small>{h?.ollama.model || "Ollama"}</small>
         </div>
+      </details>
+      {busy && (
+        <button className="button secondary cancel" onClick={cancel}>
+          <Square size={12} />
+          Cancelar solicitação
+        </button>
       )}
-      <section className="panel pipeline-panel">
-        <div className="panel-heading">
-          <div>
-            <h2>Pipeline de processamento</h2>
-            <p>Uma arquitetura local, da coleta à persistência.</p>
-          </div>
-          <button className="text-button" onClick={() => setView("pipeline")}>
-            Ver serviços
-            <ArrowRight size={15} />
-          </button>
-        </div>
-        <Pipeline health={h} />
-      </section>
       <section className="panel latest-panel">
         <div className="panel-heading">
-          <div>
-            <h2>Última análise</h2>
-            <p>
-              {latest
-                ? `${latest.model} · ${time(latest.analyzed_at)}`
-                : "O próximo passo é executar sua primeira análise."}
-            </p>
-          </div>
+          <h2>Última análise</h2>
           {latest && (
-            <span className={`soft-tag ${latest.consumed_at ? "success" : ""}`}>
-              {latest.consumed_at ? <Check size={13} /> : <Clock3 size={13} />}{" "}
-              {latest.consumed_at
-                ? "Consumo confirmado"
-                : "Publicada · aguardando consumo"}
+            <span className="soft-tag">
+              {latest.consumed_at ? "Salva no histórico" : "Aguardando consumo"}
             </span>
           )}
         </div>
@@ -259,23 +257,11 @@ export function Overview({
           <>
             <p className="analysis-preview">{latest.analysis_text}</p>
             <button className="text-button" onClick={() => setSelected(latest)}>
-              Abrir análise completa
-              <ArrowRight size={15} />
+              Abrir análise completa <ArrowRight size={14} />
             </button>
           </>
         ) : (
-          <div className="empty-state">
-            <span>
-              <Eye size={23} />
-            </span>
-            <div>
-              <strong>Os números contam uma história.</strong>
-              <p>
-                Clique em “Analisar agora” para obter a primeira leitura do
-                modelo local.
-              </p>
-            </div>
-          </div>
+          <p>Os resultados aparecerão aqui depois da primeira análise.</p>
         )}
       </section>
     </>

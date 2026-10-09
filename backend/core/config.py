@@ -19,7 +19,7 @@ class Settings:
     analysis_timeout_seconds: float
 
 
-# Carrega as configurações locais || Load local settings
+# Carrega as configurações locais
 def load_settings() -> Settings:
     database_path = Path(os.getenv("DATABASE_PATH", "data/occhio.db")).expanduser()
     if not database_path.is_absolute():

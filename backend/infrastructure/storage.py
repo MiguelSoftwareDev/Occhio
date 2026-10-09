@@ -6,12 +6,12 @@ from backend.core.config import SETTINGS
 from backend.domain.models import Analysis
 
 
-# Abre o banco com espera por bloqueio || Open the database with a busy timeout
+# Abre o banco com espera por bloqueio
 def connect():
     return sqlite3.connect(SETTINGS.database_path, timeout=10)
 
 
-# Prepara a persistência local || Prepare local persistence
+# Prepara a persistência local
 def initialize_database() -> None:
     SETTINGS.database_path.parent.mkdir(parents=True, exist_ok=True)
     with connect() as connection:
@@ -24,7 +24,7 @@ def initialize_database() -> None:
         )
 
 
-# Persiste uma vez por identificador || Persist once per identifier
+# Persiste uma vez por identificador
 def save_result(result: dict) -> None:
     validated = Analysis.model_validate(result).model_dump(mode="json")
     validated["consumed_at"] = datetime.now(timezone.utc).isoformat()
@@ -39,7 +39,7 @@ def save_result(result: dict) -> None:
         )
 
 
-# Lê o histórico com paginação || Read paginated history
+# Lê o histórico com paginação
 def read_results(limit: int = 20, offset: int = 0) -> list[dict]:
     with connect() as connection:
         rows = connection.execute(
@@ -49,7 +49,7 @@ def read_results(limit: int = 20, offset: int = 0) -> list[dict]:
     return [json.loads(row[0]) for row in rows]
 
 
-# Localiza um resultado consumido || Find a consumed result
+# Localiza um resultado consumido
 def find_result(analysis_id: str) -> dict | None:
     with connect() as connection:
         row = connection.execute(
@@ -58,7 +58,7 @@ def find_result(analysis_id: str) -> dict | None:
     return json.loads(row[0]) if row else None
 
 
-# Conta resultados persistidos || Count persisted results
+# Conta resultados persistidos
 def count_results() -> int:
     with connect() as connection:
         return connection.execute("SELECT COUNT(*) FROM analyses").fetchone()[0]

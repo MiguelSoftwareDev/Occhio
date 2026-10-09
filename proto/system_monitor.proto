@@ -3,6 +3,8 @@ syntax = "proto3";
 package occhio.monitor.v1;
 
 service SystemAnalysis {
+  rpc StreamProgress(stream SystemSnapshot) returns (stream ProgressEvent);
+  rpc AnalyzeProgress(SystemSnapshot) returns (stream ProgressEvent);
   rpc AnalyzeSnapshot(SystemSnapshot) returns (AnalysisResult);
   rpc StreamSnapshots(stream SystemSnapshot) returns (stream AnalysisResult);
 }
@@ -35,4 +37,10 @@ message AnalysisResult {
   string analysis_text = 13;
   double inference_ms = 14;
   string prompt_version = 15;
+}
+
+message ProgressEvent {
+  string stage = 1;
+  string status = 2;
+  AnalysisResult result = 3;
 }

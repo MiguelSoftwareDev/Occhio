@@ -1,11 +1,12 @@
 import { Pipeline } from "../components/Pipeline";
-import type { Health } from "../lib/types";
+import type { Health, Progress } from "../lib/types";
 interface Props {
   h: Health | null;
+  progress: Progress;
   health: { refresh: () => void };
 }
 
-export function PipelinePage({ h, health }: Props) {
+export function PipelinePage({ h, health, progress }: Props) {
   return (
     <>
       <section className="panel pipeline-panel">
@@ -21,7 +22,7 @@ export function PipelinePage({ h, health }: Props) {
             Verificar agora
           </button>
         </div>
-        <Pipeline health={h} />
+        <Pipeline health={h} progress={progress} />
       </section>
       <div className="service-grid">
         {[
@@ -69,9 +70,9 @@ export function PipelinePage({ h, health }: Props) {
         ))}
       </div>
       <div className="notice">
-        Para demonstrar transporte assíncrono: pare o consumidor, execute uma
-        análise, observe a fila e reinicie o consumidor. O resultado aparecerá
-        no histórico.
+        O percentual representa etapas confirmadas, não o tempo restante. Uma
+        mensagem publicada pode aguardar na fila até o consumidor gravá-la no
+        SQLite.
       </div>
     </>
   );

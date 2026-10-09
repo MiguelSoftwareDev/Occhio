@@ -7,7 +7,7 @@ from backend.core.config import SETTINGS
 PROMPT_VERSION = "system-health-v1"
 
 
-# Monta o pedido de análise || Build the analysis prompt
+# Monta o pedido de análise
 def build_prompt(snapshot: dict) -> str:
     memory_gib = snapshot["memory_used_bytes"] / (1024**3)
     total_gib = snapshot["memory_total_bytes"] / (1024**3)
@@ -28,7 +28,7 @@ def build_prompt(snapshot: dict) -> str:
 
 
 class OllamaClient:
-    # Valida o endereço local do Ollama || Validate the local Ollama address
+    # Valida o endereço local do Ollama
     def __init__(self) -> None:
         hostname = urlparse(SETTINGS.ollama_url).hostname
         if hostname not in {"127.0.0.1", "localhost", "::1"}:
@@ -36,7 +36,7 @@ class OllamaClient:
         self.url = SETTINGS.ollama_url + "/api/generate"
         self.model = SETTINGS.ollama_model
 
-    # Solicita a análise ao modelo local || Request analysis from the local model
+    # Solicita a análise ao modelo local
     async def analyze(self, snapshot: dict) -> str:
         async with httpx.AsyncClient(
             timeout=SETTINGS.analysis_timeout_seconds, trust_env=False, follow_redirects=False

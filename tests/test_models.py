@@ -6,7 +6,7 @@ from backend.domain.models import Snapshot
 from backend.infrastructure.ollama import build_prompt
 
 
-# Bloqueia métricas não finitas e inconsistentes || Block non-finite and inconsistent metrics
+# Bloqueia métricas não finitas e inconsistentes
 @pytest.mark.parametrize(
     "change",
     [
@@ -21,14 +21,14 @@ def test_invalid_metrics(snapshot, change):
         Snapshot.model_validate({**snapshot, **change})
 
 
-# Mantém a inferência no endereço local || Keep inference on a local address
+# Mantém a inferência no endereço local
 def test_local_only(monkeypatch):
     monkeypatch.setenv("OLLAMA_URL", "https://example.com")
     with pytest.raises(ValueError):
         load_settings()
 
 
-# Inclui os valores coletados no prompt || Include collected values in the prompt
+# Inclui os valores coletados no prompt
 def test_prompt(snapshot):
     prompt = build_prompt(snapshot)
     assert "CPU: 0.0%" in prompt

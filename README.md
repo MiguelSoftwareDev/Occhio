@@ -1,98 +1,80 @@
 # Occhio
 
-**Observabilidade local com análise de sistemas por IA.**
+**A pixel-art system observatory with local AI analysis.**
 
-Occhio coleta CPU, memória, disco e processos reais do computador, envia os dados por gRPC para um serviço de análise com Ollama e publica a resposta no RabbitMQ. Um consumidor independente grava os resultados no SQLite. O console apresenta métricas, histórico e a situação de cada serviço.
+Occhio is a development and testing project for exploring system telemetry, local language models, typed service contracts and asynchronous processing. It combines a React/TypeScript console with Python services, gRPC/Protocol Buffers, Ollama, RabbitMQ and SQLite.
 
-Projeto acadêmico de Organização de Computadores e Sistemas Operacionais — **Tema 2**.
+The dashboard reads the machine running the collector. It displays real CPU, memory, storage and process data, identifies the host and operating environment, and requests installed application icons from the operating system. No example games, invented process statistics or generated application logos are shipped in the live interface.
 
-![Console Occhio](docs/images/console-desktop.png)
+![Occhio console](docs/images/console-desktop.png)
 
-## Iniciar no Windows
+## What it explores
 
-Requisitos: Python 3.12, Docker Desktop em execução e Ollama instalado. Para editar o frontend, Node.js 22. O ZIP inclui `frontend/dist`, portanto Node não é necessário apenas para executar a entrega.
+- **Observability:** interval CPU sampling, resident memory, process identities and service readiness.
+- **Service contracts:** unary, bidirectional streaming and server-streamed progress through gRPC.
+- **Local inference:** Ollama interprets a real system snapshot using an open model.
+- **Asynchronous delivery:** RabbitMQ publisher confirmation and an independent consumer.
+- **Persistence:** SQLite history, message acknowledgement after storage and deduplication by analysis ID.
+- **Interface design:** pixel-art stations, a walking/typing penguin, responsive layouts and reduced-motion support.
+
+The penguin moves on a dedicated path below the stations. Each completed stage contributes 20% to the progress bar. An active operation has an indeterminate indicator; the console does not invent token progress or an estimated completion time. Storage reaches completion only after the consumer confirms a record in SQLite.
+
+## Project structure
+
+| Directory | Responsibility |
+| --- | --- |
+| `frontend/src/components` | Metrics, process radar, animated pipeline and analysis details |
+| `frontend/src/assets` | Penguin/station atlases, eye mark, local font and font license |
+| `backend/api` | HTTP console, process icons and incremental progress |
+| `backend/services` | Metrics, process sampling, environment detection, gRPC service and consumer |
+| `backend/infrastructure` | Ollama, messaging, storage and native icon extraction |
+| `backend/domain` | Validation and Protocol Buffers conversions |
+| `proto` | Versioned service contract |
+| `tests` | Contract, API, progress, persistence and failure-path tests |
+| `docs` | Architecture, installation and validation |
+
+## Running the project
+
+See [installation](docs/INSTALACAO.md) for initial setup. The distributed ZIP includes the built frontend. Existing installations can replace the project files, preserve `.env`, `.venv` and `data/`, stop the running services and restart:
 
 ```powershell
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-pip install -r requirements.lock.txt
-Copy-Item .env.example .env
-ollama pull qwen3:1.7b
-.\scripts\start.ps1
+powershell -ExecutionPolicy Bypass -File .\scripts\start.ps1
 ```
 
-Abra **http://127.0.0.1:8000**. Se o Ollama não iniciar automaticamente, execute `ollama serve` em outro terminal. Caso a política do PowerShell bloqueie o script, use os comandos manuais de [instalação](docs/INSTALACAO.md); não é necessário alterar políticas do computador.
+Python 3.12, RabbitMQ and Ollama are required for the complete analysis pipeline. The system monitor itself works while the inference/broker services are unavailable. Run only the monitor with:
 
-## Iniciar no Linux/macOS
-
-```bash
-python3.12 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.lock.txt
-cp .env.example .env
-ollama pull qwen3:1.7b
-./scripts/start.sh # Linux ou Mac
-powershell -ExecutionPolicy Bypass -File .\scripts\start.ps1 # Windows pra poder rordar 
-.\scripts\start.ps1 #Comando do Windows
+```powershell
+.\.venv\Scripts\python.exe -m uvicorn backend.api.gateway:app --host 127.0.0.1 --port 8000
 ```
 
-## Arquitetura
+Open **http://127.0.0.1:8000**. The model configured by default is `qwen3:1.7b`; choose an installed model through `.env`.
 
-- `frontend/src`: React + TypeScript, componentes, hooks e cliente HTTP.
-- `backend/api`: endpoints HTTP e ponte incremental NDJSON → navegador.
-- `backend/domain`: modelos validados e conversões Protobuf.
-- `backend/services`: coleta, servidor gRPC e consumidor independente.
-- `backend/infrastructure`: Ollama, RabbitMQ e SQLite.
-- `backend/core`: configuração por ambiente.
-- `proto`: contrato versionado com unary e streaming bidirecional.
-- `tests`: regras, persistência, API, mensageria e transporte gRPC.
-- `scripts`: inicialização e verificação ponta a ponta.
-- `docs`: arquitetura, decisões, instalação, demonstração e matriz do enunciado.
+## Real process icons and environment
 
-A API/coletor, o servidor gRPC e o consumidor são processos distintos. Ollama roda no host; apenas o RabbitMQ usa Docker. Assim, `psutil` mede o host em que o Python é executado, não um container da aplicação.
+On Windows, icons are extracted from observed executable files through the operating system. Linux uses installed desktop entries and available PNG application icons; macOS reads bundle icons. Access restrictions, background services and applications without an available icon show an explicit empty placeholder. There is no external logo lookup or fabricated replacement. Windows and macOS extraction paths need validation on those operating systems; this release was exercised on Linux.
 
-## Confiabilidade
+CPU per process is normalized to the machine's logical CPU count. The first sample remains unknown until a second sample establishes an interval. Process memory is RSS and may include shared pages; its sum is not the same as total system memory. Capacity is displayed in GiB/MiB, calculated from actual bytes.
 
-Publicação durável com publisher confirms e roteamento obrigatório; ACK somente depois da gravação; deduplicação por `analysis_id`; reconexão do consumidor com espera progressiva; fila de falhas para eventos inválidos; validação de métricas; limites de concorrência; deadlines; confirmação de consumo separada da confirmação de publicação.
+Hostnames and OS labels come from the collector. `OCCHIO_ENVIRONMENT` optionally provides a deployment label; otherwise the detected container, WSL or OS label is used. A remote browser sees the collector machine's processes, not its own. Loopback binding remains the default. Host/origin allowlists can be configured for a controlled network; this prototype does not supply public multiuser authentication.
 
-Não há promessa de entrega exatamente uma vez: a fila permite reentrega e o banco evita registros duplicados. Se a resposta da publicação se perder, seu estado pode ser ambíguo. Não há retentativa automática da solicitação de IA.
-
-## Verificação
+## Development and validation
 
 ```bash
 pip install -r requirements-dev.txt
 python -m backend.generate_proto
 ruff check backend tests scripts
 pytest -q
-python scripts/verify_e2e.py
-```
-
-O último comando **exige os serviços reais ativos** e salva evidências em `evidence/e2e.json`. Os testes automatizados comuns isolam Ollama e RabbitMQ; exercitam o transporte gRPC real em loopback. Consulte [o relatório de validação](docs/VALIDACAO.md) para distinguir o que foi executado do que depende do seu ambiente.
-
-## Desenvolvimento do frontend
-
-```bash
 cd frontend
 npm ci
-npm run dev
-# ou gerar a versão servida pelo backend:
+npm run typecheck
 npm run build
 ```
 
-O Vite encaminha `/api` ao backend em `127.0.0.1:8000`. Reinicie o backend após o primeiro build. O arquivo `package-lock.json` fixa a árvore JavaScript; `requirements.lock.txt` fixa as dependências Python testadas.
+Unit/integration tests use real loopback gRPC while isolating Ollama and RabbitMQ. For a complete real-service check, run `python scripts/verify_e2e.py` with all services active. Read [the validation notes](docs/VALIDACAO.md) for the exact scope.
 
-## Documentação
+- [Pixel interface and animation](docs/PIXEL_INTERFACE.md)
+- [Architecture](docs/ARCHITECTURE.md)
+- [Installation](docs/INSTALACAO.md)
+- [Engineering decisions](docs/DECISOES.md)
 
-- [Instalação e solução de problemas](docs/INSTALACAO.md)
-- [Arquitetura e garantias](docs/ARCHITECTURE.md)
-- [Roteiro de demonstração](docs/DEMONSTRACAO.md)
-- [Requisitos do Tema 2](docs/REQUISITOS.md)
-- [Decisões de engenharia](docs/DECISOES.md)
-- [Validação da entrega](docs/VALIDACAO.md)
-- [Estrutura do artigo e apresentação](docs/ENTREGA_ACADEMICA.md)
-
-## Escopo e limites
-
-Aplicação local para estudo e demonstração: sem autenticação multiusuário, TLS ou exposição pública. Portas vinculadas ao loopback. O modelo analisa uma coleta por vez e não determina causalidade. Tendências do gráfico são mantidas apenas durante a sessão; análises consumidas permanecem no SQLite. O histórico não possui expurgo automático.
-
-Download de dependências/modelo exige rede. Depois da preparação, a análise usa Ollama local. Não publique `.env`, `data/` ou evidências com informações do seu host sem revisá-las.
+The project is intended for development, experimentation and testing. The model's output is a hypothesis about observed metrics, not proof of causality. Inference runs on the configured local Ollama service; the UI does not send telemetry to an external model provider.

@@ -5,7 +5,7 @@ from fastapi.testclient import TestClient
 from backend.api import gateway
 
 
-# Valida histórico, limites e proteção de origem || Check history, bounds and origin protection
+# Valida histórico, limites e proteção de origem
 def test_api(database, analysis):
     database.save_result(analysis)
     with TestClient(gateway.app) as client:
@@ -24,7 +24,7 @@ def test_api(database, analysis):
         assert client.get("/api/metrics").json()["memory_total_bytes"] > 0
 
 
-# Verifica prontidão com modelo ausente || Check readiness with a missing model
+# Verifica prontidão com modelo ausente
 def test_missing_model(database, monkeypatch):
     monkeypatch.setattr(
         gateway,
@@ -39,7 +39,7 @@ def test_missing_model(database, monkeypatch):
         assert client.get("/api/health").json()["ok"] is False
 
 
-# Impede inferências sobrepostas pelo console || Prevent overlapping console inference
+# Impede inferências sobrepostas pelo console
 def test_busy_pipeline(database):
     with TestClient(gateway.app) as client:
         client.portal.call(gateway.app.state.analysis_lock.acquire)

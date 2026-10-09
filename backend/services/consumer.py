@@ -13,7 +13,7 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(mess
 logger = logging.getLogger("occhio.consumer")
 
 
-# Confirma apenas depois da persistência || Acknowledge only after persistence
+# Confirma apenas depois da persistência
 def handle_message(channel, method, properties, body) -> None:
     try:
         save_result(json.loads(body.decode("utf-8")))
@@ -21,14 +21,14 @@ def handle_message(channel, method, properties, body) -> None:
         channel.basic_nack(delivery_tag=method.delivery_tag, requeue=False)
         logger.warning("Mensagem inválida enviada à fila de falhas")
     except sqlite3.Error:
-        # Fecha a conexão para devolver a mensagem sem confirmação || Requeue on disconnect
+        # Fecha a conexão para devolver a mensagem sem confirmação
         raise
     else:
         channel.basic_ack(delivery_tag=method.delivery_tag)
         logger.info("Resultado consumido: %s", properties.message_id)
 
 
-# Reconecta com espera progressiva || Reconnect with backoff
+# Reconecta com espera progressiva
 def consume() -> None:
     delay = 1
     while True:
