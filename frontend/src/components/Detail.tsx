@@ -3,6 +3,7 @@ import { ArrowDownToLine, X } from "lucide-react";
 import type { Analysis } from "../lib/types";
 import { download } from "../lib/api";
 import { percent } from "../lib/format";
+import { HealthReport } from "./HealthReport";
 // Abre os detalhes com foco acessível
 export function Detail({
   analysis,
@@ -41,7 +42,7 @@ export function Detail({
         <span>{analysis.model}</span>
         <span>{(analysis.inference_ms / 1000).toFixed(1)}s de inferência</span>
       </div>
-      <p className="analysis-text">{analysis.analysis_text}</p>
+      <HealthReport analysis={analysis} />
       <dl>
         <dt>ID</dt>
         <dd>{analysis.analysis_id}</dd>

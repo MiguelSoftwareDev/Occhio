@@ -21,6 +21,17 @@ def message_to_snapshot(message: system_monitor_pb2.SystemSnapshot) -> dict:
         "disk_percent": message.disk_percent,
         "process_count": message.process_count,
         "uptime_seconds": message.uptime_seconds,
+        "top_processes": [
+            {
+                "pid": item.pid,
+                "name": item.name,
+                "cpu_percent": item.cpu_percent,
+                "memory_bytes": item.memory_bytes,
+                "memory_percent": item.memory_percent,
+                "cpu_measured": item.cpu_measured,
+            }
+            for item in message.top_processes
+        ],
     }
 
 

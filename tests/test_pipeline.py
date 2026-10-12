@@ -8,15 +8,36 @@ import pytest
 from backend.domain.contracts import result_to_dict, snapshot_to_message
 from backend.domain.contracts import system_monitor_pb2_grpc as rpc
 from backend.infrastructure import messaging
+from backend.infrastructure.ollama import build_prompt
 from backend.services import analysis_server, consumer
 
 
 # Exercita transporte gRPC real com integrações isoladas
 @pytest.mark.asyncio
 async def test_unary_stream_and_zero_values(snapshot, monkeypatch):
+    snapshot = {
+        **snapshot,
+        "top_processes": [
+            {
+                "pid": 42,
+                "name": "editor.exe",
+                "cpu_percent": 12.5,
+                "cpu_measured": True,
+                "memory_bytes": 1200,
+                "memory_percent": 12.0,
+            }
+        ],
+    }
     published = []
+
+    async def analyze_with_prompt(snapshot):
+        prompt = build_prompt(snapshot)
+        assert "editor.exe (PID 42)" in prompt
+        assert isinstance(snapshot["top_processes"][0]["memory_bytes"], int)
+        return "CPU em 0%."
+
     monkeypatch.setattr(
-        analysis_server.OllamaClient, "analyze", AsyncMock(return_value="CPU em 0%.")
+        analysis_server.OllamaClient, "analyze", AsyncMock(side_effect=analyze_with_prompt)
     )
     monkeypatch.setattr(analysis_server, "publish_result", published.append)
     server = grpc.aio.server()
@@ -28,6 +49,9 @@ async def test_unary_stream_and_zero_values(snapshot, monkeypatch):
             stub = rpc.SystemAnalysisStub(channel)
             result = await stub.AnalyzeSnapshot(snapshot_to_message(snapshot), timeout=5)
             assert result_to_dict(result)["cpu_percent"] == 0
+            assert result_to_dict(result)["top_processes"] == [
+                {**snapshot["top_processes"][0], "memory_bytes": "1200"}
+            ]
 
             # Produz duas amostras
             async def requests():

@@ -25,7 +25,7 @@ Uma máquina, três processos Python, um processo Ollama e um container RabbitMQ
 
 `domain/models.py` valida percentuais finitos, memória utilizada ≤ total, hostname, tipos e datas de coleta com fuso. O consumidor valida novamente o evento. Campos numéricos em zero são preservados na serialização Protobuf; inteiros de 64 bits podem ser representados como strings no JSON.
 
-O prompt está em `infrastructure/ollama.py`, com versão `system-health-v1`. Recebe apenas métricas, pede português e distinção entre observação e hipótese. O modelo padrão é `qwen3:1.7b`; não há fallback para nuvem nem análise inventada quando o modelo falha.
+O prompt está em `infrastructure/ollama.py`, com versão `system-health-v2`. Recebe métricas e os maiores consumidores por processo, pede português e distinção entre observação e hipótese. O modelo padrão é `qwen3:1.7b`; não há fallback para nuvem nem análise inventada quando o modelo falha.
 
 ## Mensageria e persistência
 

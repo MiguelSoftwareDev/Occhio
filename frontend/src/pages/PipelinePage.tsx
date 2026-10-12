@@ -69,11 +69,6 @@ export function PipelinePage({ h, health, progress }: Props) {
           </article>
         ))}
       </div>
-      <div className="notice">
-        O percentual representa etapas confirmadas, não o tempo restante. Uma
-        mensagem publicada pode aguardar na fila até o consumidor gravá-la no
-        SQLite.
-      </div>
     </>
   );
 }

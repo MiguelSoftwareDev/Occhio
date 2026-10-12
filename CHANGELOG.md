@@ -1,3 +1,15 @@
+# Changelog
+
+## Revisão de 12/10/2026
+
+- Corrigida a conversão de memória por processo na entrada gRPC do prompt.
+- Teste de regressão executa a construção real do prompt após transporte gRPC.
+- Inicialização Windows usa Compose com healthcheck e trata falhas do Docker.
+- Erros de inferência e publicação identificam a etapa no console e no log.
+- Documentação alinhada ao relatório de saúde e ao prompt v2.
+- Vite atualizado para 6.4.4; auditoria npm sem vulnerabilidades conhecidas.
+- Workflow de qualidade recuperado do histórico Git incluído no envio.
+
 # Alterações
 
 ## 2.0.0
@@ -11,11 +23,11 @@
 - Preservação de zeros no JSON de resultados Protobuf.
 - Streaming gRPC repassado incrementalmente ao navegador via NDJSON.
 - Validação das métricas, limite de chamadas concorrentes, controles locais de Host/Origin e renderização textual da análise.
-- Testes automatizados, CI, locks, verificador ponta a ponta e documentação de requisitos/demonstração.
+- Testes automatizados, CI, locks, verificador ponta a ponta e documentação de requisitos e operação.
 
 ## Compatibilidade
 
-O endpoint `/api/history` retorna `{items, total, offset, limit}`. O endpoint de streaming retorna NDJSON incremental. A fila nova é `analysis.results.v2`; mensagens antigas não são migradas. O servidor e o cliente devem regenerar o contrato `.proto` ao atualizar. A entrega não inclui banco de dados nem evidências de inferência real.
+O endpoint `/api/history` retorna `{items, total, offset, limit}`. O endpoint de streaming retorna NDJSON incremental. A fila nova é `analysis.results.v2`; mensagens antigas não são migradas. O servidor e o cliente devem regenerar o contrato `.proto` ao atualizar. O pacote não inclui configuração privada, banco ou histórico local.
 
 ## Pixel interface update
 

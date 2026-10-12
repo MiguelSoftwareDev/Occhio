@@ -10,7 +10,7 @@ The interface uses a light canvas, navy borders, cyan progress indicators and a 
 - `frontend/src/styles.css`: stepped sprite animations and responsive layouts; `prefers-reduced-motion` stops movement while preserving stage information.
 - Pixelify Sans is bundled under its SIL Open Font License; see `frontend/src/assets/FONT-LICENSE.txt`.
 
-The supplied character reference was used to generate the walking/typing atlas. The houses were generated from the approved design. Application icons are separate: those come only from the operating system.
+The character and station atlases are local interface assets. Application icons are extracted separately from the operating system.
 
 ## Progress contract
 
@@ -22,7 +22,7 @@ The supplied character reference was used to generate the walking/typing atlas. 
 4. RabbitMQ completes after publisher confirmation.
 5. SQLite completes only when the independent consumer's result can be read.
 
-The overall percentage is completed stages / 5. Active stages are indeterminate, not invented fractions of LLM execution. A delayed consumer leaves the pipeline at 80%; the console continues checking storage. The optional bidirectional streaming mode uses StreamProgress to report stages for each snapshot and verifies storage separately.
+The overall percentage is completed stages / 5. Active stages are indeterminate, without a token-level percentage. A delayed consumer leaves the pipeline at 80%; the console continues checking storage. The optional bidirectional streaming mode uses StreamProgress to report stages for each snapshot and verifies storage separately.
 
 Cancellation stops the request. A message already published can still be consumed. Errors leave the failed operation visible and do not turn the whole route green.
 

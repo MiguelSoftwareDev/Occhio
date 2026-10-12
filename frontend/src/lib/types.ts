@@ -8,6 +8,14 @@ export interface Snapshot {
   disk_percent: number;
   process_count: number;
   uptime_seconds: number | string;
+  top_processes?: {
+    pid: number;
+    name: string;
+    cpu_percent: number;
+    cpu_measured: boolean;
+    memory_bytes: number | string;
+    memory_percent: number;
+  }[];
 }
 export interface Analysis extends Snapshot {
   analysis_id: string;

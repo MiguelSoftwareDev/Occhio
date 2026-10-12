@@ -24,7 +24,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x14system_monitor.proto\x12\x11occhio.monitor.v1\"\xe1\x01\n\x0eSystemSnapshot\x12\x11\n\thost_name\x18\x01 \x01(\t\x12\x13\n\x0b\x63\x61ptured_at\x18\x02 \x01(\t\x12\x13\n\x0b\x63pu_percent\x18\x03 \x01(\x01\x12\x16\n\x0ememory_percent\x18\x04 \x01(\x01\x12\x19\n\x11memory_used_bytes\x18\x05 \x01(\x04\x12\x1a\n\x12memory_total_bytes\x18\x06 \x01(\x04\x12\x14\n\x0c\x64isk_percent\x18\x07 \x01(\x01\x12\x15\n\rprocess_count\x18\x08 \x01(\r\x12\x16\n\x0euptime_seconds\x18\t \x01(\x04\"\xdf\x02\n\x0e\x41nalysisResult\x12\x13\n\x0b\x61nalysis_id\x18\x01 \x01(\t\x12\x11\n\thost_name\x18\x02 \x01(\t\x12\x13\n\x0b\x63\x61ptured_at\x18\x03 \x01(\t\x12\x13\n\x0b\x61nalyzed_at\x18\x04 \x01(\t\x12\x13\n\x0b\x63pu_percent\x18\x05 \x01(\x01\x12\x16\n\x0ememory_percent\x18\x06 \x01(\x01\x12\x19\n\x11memory_used_bytes\x18\x07 \x01(\x04\x12\x1a\n\x12memory_total_bytes\x18\x08 \x01(\x04\x12\x14\n\x0c\x64isk_percent\x18\t \x01(\x01\x12\x15\n\rprocess_count\x18\n \x01(\r\x12\x16\n\x0euptime_seconds\x18\x0b \x01(\x04\x12\r\n\x05model\x18\x0c \x01(\t\x12\x15\n\ranalysis_text\x18\r \x01(\t\x12\x14\n\x0cinference_ms\x18\x0e \x01(\x01\x12\x16\n\x0eprompt_version\x18\x0f \x01(\t\"a\n\rProgressEvent\x12\r\n\x05stage\x18\x01 \x01(\t\x12\x0e\n\x06status\x18\x02 \x01(\t\x12\x31\n\x06result\x18\x03 \x01(\x0b\x32!.occhio.monitor.v1.AnalysisResult2\xfb\x02\n\x0eSystemAnalysis\x12Y\n\x0eStreamProgress\x12!.occhio.monitor.v1.SystemSnapshot\x1a .occhio.monitor.v1.ProgressEvent(\x01\x30\x01\x12X\n\x0f\x41nalyzeProgress\x12!.occhio.monitor.v1.SystemSnapshot\x1a .occhio.monitor.v1.ProgressEvent0\x01\x12W\n\x0f\x41nalyzeSnapshot\x12!.occhio.monitor.v1.SystemSnapshot\x1a!.occhio.monitor.v1.AnalysisResult\x12[\n\x0fStreamSnapshots\x12!.occhio.monitor.v1.SystemSnapshot\x1a!.occhio.monitor.v1.AnalysisResult(\x01\x30\x01\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x14system_monitor.proto\x12\x11occhio.monitor.v1\"\x9a\x02\n\x0eSystemSnapshot\x12\x11\n\thost_name\x18\x01 \x01(\t\x12\x13\n\x0b\x63\x61ptured_at\x18\x02 \x01(\t\x12\x13\n\x0b\x63pu_percent\x18\x03 \x01(\x01\x12\x16\n\x0ememory_percent\x18\x04 \x01(\x01\x12\x19\n\x11memory_used_bytes\x18\x05 \x01(\x04\x12\x1a\n\x12memory_total_bytes\x18\x06 \x01(\x04\x12\x14\n\x0c\x64isk_percent\x18\x07 \x01(\x01\x12\x15\n\rprocess_count\x18\x08 \x01(\r\x12\x16\n\x0euptime_seconds\x18\t \x01(\x04\x12\x37\n\rtop_processes\x18\n \x03(\x0b\x32 .occhio.monitor.v1.ProcessMetric\"\x83\x01\n\rProcessMetric\x12\x0b\n\x03pid\x18\x01 \x01(\r\x12\x0c\n\x04name\x18\x02 \x01(\t\x12\x13\n\x0b\x63pu_percent\x18\x03 \x01(\x01\x12\x14\n\x0cmemory_bytes\x18\x04 \x01(\x04\x12\x16\n\x0ememory_percent\x18\x05 \x01(\x01\x12\x14\n\x0c\x63pu_measured\x18\x06 \x01(\x08\"\x98\x03\n\x0e\x41nalysisResult\x12\x13\n\x0b\x61nalysis_id\x18\x01 \x01(\t\x12\x11\n\thost_name\x18\x02 \x01(\t\x12\x13\n\x0b\x63\x61ptured_at\x18\x03 \x01(\t\x12\x13\n\x0b\x61nalyzed_at\x18\x04 \x01(\t\x12\x13\n\x0b\x63pu_percent\x18\x05 \x01(\x01\x12\x16\n\x0ememory_percent\x18\x06 \x01(\x01\x12\x19\n\x11memory_used_bytes\x18\x07 \x01(\x04\x12\x1a\n\x12memory_total_bytes\x18\x08 \x01(\x04\x12\x14\n\x0c\x64isk_percent\x18\t \x01(\x01\x12\x15\n\rprocess_count\x18\n \x01(\r\x12\x16\n\x0euptime_seconds\x18\x0b \x01(\x04\x12\r\n\x05model\x18\x0c \x01(\t\x12\x15\n\ranalysis_text\x18\r \x01(\t\x12\x14\n\x0cinference_ms\x18\x0e \x01(\x01\x12\x16\n\x0eprompt_version\x18\x0f \x01(\t\x12\x37\n\rtop_processes\x18\x10 \x03(\x0b\x32 .occhio.monitor.v1.ProcessMetric\"a\n\rProgressEvent\x12\r\n\x05stage\x18\x01 \x01(\t\x12\x0e\n\x06status\x18\x02 \x01(\t\x12\x31\n\x06result\x18\x03 \x01(\x0b\x32!.occhio.monitor.v1.AnalysisResult2\xfb\x02\n\x0eSystemAnalysis\x12Y\n\x0eStreamProgress\x12!.occhio.monitor.v1.SystemSnapshot\x1a .occhio.monitor.v1.ProgressEvent(\x01\x30\x01\x12X\n\x0f\x41nalyzeProgress\x12!.occhio.monitor.v1.SystemSnapshot\x1a .occhio.monitor.v1.ProgressEvent0\x01\x12W\n\x0f\x41nalyzeSnapshot\x12!.occhio.monitor.v1.SystemSnapshot\x1a!.occhio.monitor.v1.AnalysisResult\x12[\n\x0fStreamSnapshots\x12!.occhio.monitor.v1.SystemSnapshot\x1a!.occhio.monitor.v1.AnalysisResult(\x01\x30\x01\x62\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -32,11 +32,13 @@ _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'system_monitor_pb2', _globa
 if not _descriptor._USE_C_DESCRIPTORS:
   DESCRIPTOR._loaded_options = None
   _globals['_SYSTEMSNAPSHOT']._serialized_start=44
-  _globals['_SYSTEMSNAPSHOT']._serialized_end=269
-  _globals['_ANALYSISRESULT']._serialized_start=272
-  _globals['_ANALYSISRESULT']._serialized_end=623
-  _globals['_PROGRESSEVENT']._serialized_start=625
-  _globals['_PROGRESSEVENT']._serialized_end=722
-  _globals['_SYSTEMANALYSIS']._serialized_start=725
-  _globals['_SYSTEMANALYSIS']._serialized_end=1104
+  _globals['_SYSTEMSNAPSHOT']._serialized_end=326
+  _globals['_PROCESSMETRIC']._serialized_start=329
+  _globals['_PROCESSMETRIC']._serialized_end=460
+  _globals['_ANALYSISRESULT']._serialized_start=463
+  _globals['_ANALYSISRESULT']._serialized_end=871
+  _globals['_PROGRESSEVENT']._serialized_start=873
+  _globals['_PROGRESSEVENT']._serialized_end=970
+  _globals['_SYSTEMANALYSIS']._serialized_start=973
+  _globals['_SYSTEMANALYSIS']._serialized_end=1352
 # @@protoc_insertion_point(module_scope)

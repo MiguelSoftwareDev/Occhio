@@ -4,7 +4,7 @@
 
 Occhio is a development and testing project for exploring system telemetry, local language models, typed service contracts and asynchronous processing. It combines a React/TypeScript console with Python services, gRPC/Protocol Buffers, Ollama, RabbitMQ and SQLite.
 
-The dashboard reads the machine running the collector. It displays real CPU, memory, storage and process data, identifies the host and operating environment, and requests installed application icons from the operating system. No example games, invented process statistics or generated application logos are shipped in the live interface.
+The dashboard monitors the machine running the collector. It displays real CPU, memory, storage and process data, identifies the host and operating environment, and requests installed application icons from the operating system.
 
 ![Occhio console](docs/images/console-desktop.png)
 
@@ -77,4 +77,4 @@ Unit/integration tests use real loopback gRPC while isolating Ollama and RabbitM
 - [Installation](docs/INSTALACAO.md)
 - [Engineering decisions](docs/DECISOES.md)
 
-The project is intended for development, experimentation and testing. The model's output is a hypothesis about observed metrics, not proof of causality. Inference runs on the configured local Ollama service; the UI does not send telemetry to an external model provider.
+The project is intended for development, experimentation and testing. Model output interprets a snapshot; process attribution remains evidence-based. Inference runs on the configured local Ollama service; the UI does not send telemetry to an external model provider.

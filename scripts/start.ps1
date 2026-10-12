@@ -17,30 +17,18 @@ try {
         if (-not (Get-Command docker -ErrorAction SilentlyContinue)) {
             throw "Docker nao encontrado. Instale e abra Docker Desktop, reabra o terminal e tente novamente. Para somente metricas, use -MonitorOnly. Para RabbitMQ ja configurado, use -SkipBroker."
         }
-        docker info *> $null
+        cmd /c "docker info >nul 2>&1"
         if ($LASTEXITCODE -ne 0) { throw "Abra Docker Desktop e aguarde o motor iniciar." }
-        docker compose up -d rabbitmq
+        docker compose up -d --wait --wait-timeout 120 rabbitmq
         if ($LASTEXITCODE -ne 0) {
-            throw "Não foi possível iniciar o RabbitMQ."
+            throw "Nao foi possivel iniciar o RabbitMQ ou confirmar sua saude em 120 segundos."
         }
 
-        $BrokerReady = $false
-        for ($Attempt = 0; $Attempt -lt 30; $Attempt++) {
-            docker exec occhio-rabbitmq rabbitmq-diagnostics -q ping *> $null
-            if ($LASTEXITCODE -eq 0) {
-                $BrokerReady = $true
-                break
-            }
-            Start-Sleep -Seconds 1
-        }
-        if (-not $BrokerReady) {
-            throw "RabbitMQ não ficou pronto em 30 segundos."
-        }
     }
 
     & $Python -m backend.generate_proto
     if ($LASTEXITCODE -ne 0) {
-        throw "Não foi possível gerar os módulos do contrato gRPC."
+        throw "Nao foi possivel gerar os modulos do contrato gRPC."
     }
 
     & $Python backend/run_all.py

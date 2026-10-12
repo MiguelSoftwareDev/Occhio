@@ -6,6 +6,7 @@ from contextlib import suppress
 from datetime import datetime, timezone
 
 import grpc
+import httpx
 from google.protobuf.json_format import MessageToDict
 from pydantic import ValidationError
 
@@ -87,6 +88,7 @@ class SystemAnalysisService(pb2_grpc.SystemAnalysisServicer):
             Snapshot.model_validate(message_to_snapshot(request))
         except ValidationError:
             await context.abort(grpc.StatusCode.INVALID_ARGUMENT, "Métricas inválidas")
+        stage = "ollama"
         try:
             if notify:
                 await notify("grpc", "done")
@@ -109,11 +111,13 @@ class SystemAnalysisService(pb2_grpc.SystemAnalysisServicer):
                 analysis_text=analysis_text,
                 inference_ms=(time.perf_counter() - started) * 1000,
                 prompt_version=PROMPT_VERSION,
+                top_processes=request.top_processes,
             )
             payload = MessageToDict(
                 result, preserving_proto_field_name=True, always_print_fields_with_no_presence=True
             )
             Analysis.model_validate(payload)
+            stage = "rabbitmq"
             if notify:
                 await notify("ollama", "done")
                 await notify("rabbitmq", "running")
@@ -123,10 +127,20 @@ class SystemAnalysisService(pb2_grpc.SystemAnalysisServicer):
             logger.info("Resultado publicado: %s", result.analysis_id)
             return result
         except Exception as error:
-            logger.error("Falha na análise: %s", type(error).__name__)
+            logger.exception("Falha na etapa %s", stage)
+            if isinstance(error, httpx.TimeoutException):
+                detail = (
+                    "Ollama excedeu o tempo limite. Revise o modelo e ANALYSIS_TIMEOUT_SECONDS."
+                )
+            elif isinstance(error, httpx.ConnectError):
+                detail = "Ollama indisponivel. Inicie o aplicativo ou execute ollama serve."
+            elif isinstance(error, httpx.HTTPStatusError):
+                detail = "Ollama recusou a solicitacao. Confira ollama list e OLLAMA_MODEL."
+            else:
+                detail = f"Falha na etapa {stage}. Consulte o terminal do servico gRPC."
             await context.abort(
                 grpc.StatusCode.UNAVAILABLE,
-                "Análise indisponível. Confira Ollama e RabbitMQ.",
+                detail,
             )
 
 

@@ -1,20 +1,27 @@
-# Validation — pixel interface release
+# Validation
 
-Validated on Linux with Python 3.12 and Node.js. The release archive includes the compiled Vite frontend.
+## Revision: 2026-10-12
 
-## Executed checks
+Executed on Linux with Python 3.12:
 
-- 26 Python tests covering validation, collection, persistence, API origin/host protection, real loopback gRPC, publisher confirmation, consumer acknowledgement, live progress, runtime identity, process sampling, secondary volumes and ordered bidirectional progress.
-- TypeScript strict typecheck and Vite production build.
-- Ruff checks for backend, tests and scripts; Prettier for frontend source.
-- Browser checks at 1512 px desktop width and 390 px mobile width, using live Linux metrics/processes: no page overflow or JavaScript errors; search and navigation controls exercised.
-- Controlled browser pipeline run: analysis disables the action while busy, the penguin walks/types without crossing station labels/bars, five confirmed stages reach 100%, history details open, and reduced motion disables sprite animation.
-- Separate 18-second animation rendered from the same assets into MP4. Its progress is illustrative, not live telemetry.
+- 26 Python tests passed. Real loopback gRPC tests now construct the actual prompt after deserializing process metrics, covering the uint64/string regression.
+- Ruff checks and Python formatting passed.
+- Frontend source passed Prettier, strict TypeScript checking and Vite 6.4.4 production build.
+- npm audit reported zero known vulnerabilities after updating Vite from 6.4.1 to 6.4.4. This is a dependency advisory check, not a comprehensive security assessment.
 
-## External-service limits
+## Boundaries
 
-The gRPC transport tests use a real loopback server. Ollama inference and RabbitMQ adapters are isolated in tests; a complete run against an installed model and a real broker/consumer remains an environment-level check. Use `python scripts/verify_e2e.py` with those services running.
+Ollama inference and RabbitMQ publication/consumption were isolated by test adapters. Real model performance and the full broker-to-consumer path were not exercised in this review. Run `python scripts/verify_e2e.py` with the local services active to validate the installation.
 
-Windows executable-icon extraction and macOS bundle-icon extraction are implemented but were not executed on their native operating systems here. Missing icons or restricted executable access produce an empty placeholder; no application logos are generated. Linux process collection was exercised in the browser.
+The Windows startup script was reviewed and simplified to use Compose healthchecks; it was not executed on Windows here. Native Windows and macOS application-icon extraction also requires verification on those platforms.
 
-The standalone animation and any test adapter data are previews only. Test adapters are outside the application and are not included in the release archive.
+Prior browser checks covered desktop/mobile layouts and pipeline/report states. This revision preserves the interface and the supplied assets; it does not claim a fresh native-platform UI verification.
+
+## Corrected failures
+
+- Process `memory_bytes` retains its integer type inside `message_to_snapshot`, preventing a TypeError while constructing the Ollama prompt. Protobuf JSON responses may still represent uint64 as strings; frontend and persistence support that format.
+- Windows broker startup waits for the Compose healthcheck instead of polling a native command whose stderr could interrupt Windows PowerShell.
+- Inference/publication failures identify their stage; the gRPC terminal retains a traceback for diagnosis.
+- Vite was updated within major version 6 to include development-server fixes. The production console is served by FastAPI.
+
+Advisory reference: https://github.com/vitejs/vite/security/advisories/GHSA-fx2h-pf6j-xcff

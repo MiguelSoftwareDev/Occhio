@@ -30,6 +30,15 @@ from backend.services.runtime import runtime_info
 FRONTEND_DIR = PROJECT_ROOT / "frontend" / "dist"
 
 
+def grpc_error_detail(error: grpc.aio.AioRpcError) -> str:
+    if error.code() == grpc.StatusCode.DEADLINE_EXCEEDED:
+        return "A analise excedeu o tempo limite. Confira o modelo e os servicos."
+    detail = error.details() or ""
+    if detail.startswith(("Ollama ", "Falha na etapa ", "Métricas inválidas")):
+        return detail
+    return "Analise indisponivel. Confira gRPC, Ollama e RabbitMQ na aba Pipeline."
+
+
 # Prepara recursos da aplicação
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -155,9 +164,7 @@ async def analyze_once():
                     snapshot_to_message(snapshot), timeout=SETTINGS.analysis_timeout_seconds + 15
                 )
         except grpc.aio.AioRpcError as error:
-            raise HTTPException(
-                503, "Análise indisponível. Verifique Ollama, gRPC e RabbitMQ."
-            ) from error
+            raise HTTPException(503, grpc_error_detail(error)) from error
         return result_to_dict(result)
 
 
@@ -213,12 +220,12 @@ async def analyze_stream(
                         + "\n"
                     )
             yield json.dumps({"type": "complete"}) + "\n"
-        except grpc.aio.AioRpcError:
+        except grpc.aio.AioRpcError as error:
             yield (
                 json.dumps(
                     {
                         "type": "error",
-                        "detail": "Streaming interrompido. Confira os serviços; resultados anteriores permanecem na fila.",
+                        "detail": grpc_error_detail(error),
                     }
                 )
                 + "\n"
@@ -318,13 +325,15 @@ async def analyze_live():
             else:
                 yield progress(current, "waiting")
             yield json.dumps({"type": "complete"}) + "\n"
-        except (grpc.aio.AioRpcError, RuntimeError):
+        except (grpc.aio.AioRpcError, RuntimeError) as error:
             yield progress(current, "error")
             yield (
                 json.dumps(
                     {
                         "type": "error",
-                        "detail": "Análise interrompida. Verifique os serviços na aba Pipeline.",
+                        "detail": grpc_error_detail(error)
+                        if isinstance(error, grpc.aio.AioRpcError)
+                        else "O servico terminou sem resultado. Consulte o terminal do gRPC.",
                     }
                 )
                 + "\n"

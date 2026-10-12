@@ -2,11 +2,11 @@
 
 ## 01 — React + TypeScript e Vite
 
-Console com estados assíncronos, cancelamento, streaming e detalhes. Tipagem entre componentes reduz inconsistências e Vite gera assets estáticos servidos pela API. Sem framework de servidor JavaScript: a aplicação não precisa de SEO nem de outro backend. CSS próprio e ícones Lucide; sem fontes externas ou dados demonstrativos embutidos.
+Console com estados assíncronos, cancelamento, streaming e detalhes. Tipagem entre componentes reduz inconsistências e Vite gera assets estáticos servidos pela API. Sem framework de servidor JavaScript: a aplicação não precisa de SEO nem de um servidor JavaScript adicional. CSS próprio e ícones Lucide; sem fontes externas ou dados demonstrativos embutidos.
 
 ## 02 — Backend no host
 
-Ollama e Python executam no host para que `psutil` represente o computador usado na demonstração. Apenas RabbitMQ fica em container. Containerizar o coletor sem explicar seu escopo poderia apresentar métricas de outro ambiente como se fossem do host.
+Ollama e Python executam no host para que `psutil` represente o computador monitorado. Apenas RabbitMQ fica em container. Containerizar o coletor sem explicar seu escopo poderia apresentar métricas de outro ambiente como se fossem do host.
 
 ## 03 — Camadas pequenas
 
@@ -22,7 +22,7 @@ A resposta gRPC significa que o broker confirmou a publicação. O frontend cons
 
 ## 06 — Streaming com processamento sequencial
 
-O contrato é bidirecional; cada snapshot produz uma análise. O servidor processa a sequência sem paralelizar inferências de um mesmo stream. O navegador recebe NDJSON incremental. O tamanho de cada demonstração é limitado para evitar sobrecarga acidental.
+O contrato é bidirecional; cada snapshot produz uma análise. O servidor processa a sequência sem paralelizar inferências de um mesmo stream. O navegador recebe NDJSON incremental. O tamanho de cada fluxo é limitado para evitar sobrecarga acidental.
 
 ## 07 — Limites explícitos
 

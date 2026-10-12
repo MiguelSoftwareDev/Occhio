@@ -7,6 +7,16 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 Percent = Annotated[float, Field(ge=0, le=100, allow_inf_nan=False)]
 
 
+class ProcessMetric(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    pid: int = Field(ge=0)
+    name: str = Field(min_length=1, max_length=512)
+    cpu_percent: Percent = 0
+    memory_bytes: int = Field(ge=0)
+    memory_percent: Percent
+    cpu_measured: bool = False
+
+
 class Snapshot(BaseModel):
     model_config = ConfigDict(extra="forbid")
     host_name: str = Field(min_length=1, max_length=255, pattern=r"^[\w.\-]+$")
@@ -18,6 +28,7 @@ class Snapshot(BaseModel):
     disk_percent: Percent
     process_count: int = Field(ge=0)
     uptime_seconds: int = Field(ge=0)
+    top_processes: list[ProcessMetric] = Field(default_factory=list, max_length=10)
 
     # Valida a memória e o fuso
     @model_validator(mode="after")

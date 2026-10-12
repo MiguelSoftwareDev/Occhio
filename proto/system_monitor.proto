@@ -19,6 +19,16 @@ message SystemSnapshot {
   double disk_percent = 7;
   uint32 process_count = 8;
   uint64 uptime_seconds = 9;
+  repeated ProcessMetric top_processes = 10;
+}
+
+message ProcessMetric {
+  uint32 pid = 1;
+  string name = 2;
+  double cpu_percent = 3;
+  uint64 memory_bytes = 4;
+  double memory_percent = 5;
+  bool cpu_measured = 6;
 }
 
 message AnalysisResult {
@@ -37,6 +47,7 @@ message AnalysisResult {
   string analysis_text = 13;
   double inference_ms = 14;
   string prompt_version = 15;
+  repeated ProcessMetric top_processes = 16;
 }
 
 message ProgressEvent {

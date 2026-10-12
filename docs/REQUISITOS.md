@@ -12,7 +12,7 @@ Contrato funcional do projeto de desenvolvimento e teste.
 | Pelo menos um método de streaming | StreamSnapshots bidirecional | Streaming com resultados progressivos |
 | Publicar resultados em fila/tópico | RabbitMQ topic exchange, fila durável e publisher confirms | Console do broker e IDs publicados |
 | Consumir em outro processo | `backend.services.consumer` separado | Terminais/PIDs e histórico persistido |
-| Demonstrar fluxo ponta a ponta | `scripts/verify_e2e.py` | Executar com serviços reais e salvar evidence/e2e.json |
+| Validar fluxo ponta a ponta | `scripts/verify_e2e.py` | Executar com serviços reais e salvar evidence/e2e.json |
 
-O código cobre os itens técnicos. A comprovação real exige executar o modelo e o broker no ambiente da equipe; testes com substitutos não substituem essa demonstração.
+O código cobre os itens técnicos. A comprovação real exige executar o modelo e o broker no ambiente de execução; testes com substitutos não substituem essa validação.
 
